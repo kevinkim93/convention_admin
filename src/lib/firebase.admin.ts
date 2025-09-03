@@ -1,10 +1,9 @@
-// lib/firebase.admin.ts
 import 'server-only';
 import { getApps, initializeApp, applicationDefault } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
 
-const adminApp = getApps().length
+const admin = getApps().length
   ? getApps()[0]
   : initializeApp({ credential: applicationDefault() });
 
-export const adminDb = getFirestore(adminApp);
+export const adminAuth = getAuth(admin);
