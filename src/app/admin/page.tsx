@@ -181,7 +181,7 @@ export default async function AdminPage() {
 
   const allowed = process.env.ADMIN_EMAILS?.split(",").map((e) => e.trim()) ?? [];
   if (!decoded.email || !allowed.includes(decoded.email)) {
-    redirect("/");
+    redirect("/login?next=/admin");
   }
 
   /* 2) 시간 범위 */

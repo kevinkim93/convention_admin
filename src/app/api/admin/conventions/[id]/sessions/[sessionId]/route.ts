@@ -15,12 +15,17 @@ async function requireAdmin() {
   return { ok: true as const };
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string; sessionId: string } }) {
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string; sessionId: string }> } // ✅ Promise로 받고
+) {
+  const { id, sessionId } = await params; // ✅ await으로 꺼내기
+
   const gate = await requireAdmin();
   if (!gate.ok) return NextResponse.json({ error: "forbidden" }, { status: gate.status });
 
-  const convRef = adminDb.collection("conventions").doc(params.id);
-  const sessRef = convRef.collection("sessions").doc(params.sessionId);
+  const convRef = adminDb.collection("conventions").doc(id);
+  const sessRef = convRef.collection("sessions").doc(sessionId);
   const sess = await sessRef.get();
   if (!sess.exists) return NextResponse.json({ error: "session-not-found" }, { status: 404 });
 

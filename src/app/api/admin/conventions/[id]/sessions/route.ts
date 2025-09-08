@@ -16,17 +16,22 @@ async function requireAdmin() {
   return { ok: true as const };
 }
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }   // ✅ Promise로 받고
+) {
+  const { id } = await params;                       // ✅ await으로 꺼내서 사용
+
   const gate = await requireAdmin();
   if (!gate.ok) return NextResponse.json({ error: "forbidden" }, { status: gate.status });
 
-  const convId = params.id;
-  const convRef = adminDb.collection("conventions").doc(convId);
+  const convRef = adminDb.collection("conventions").doc(id);
   const conv = await convRef.get();
   if (!conv.exists) return NextResponse.json({ error: "convention-not-found" }, { status: 404 });
 
   let body: any;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid-json" }, { status: 400 }); }
+
   const title = String(body.title ?? "").trim();
   const dateTimeISO = body.dateTimeISO as string | undefined;
   const maxParticipants = Number(body.maxParticipants ?? 0);
@@ -36,13 +41,6 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   const dt = new Date(dateTimeISO);
   if (isNaN(dt.getTime())) return NextResponse.json({ error: "datetime-invalid" }, { status: 400 });
-
-  const startDate = (conv.data() as any).startDate as Timestamp | undefined;
-  const endDate = (conv.data() as any).endDate as Timestamp | undefined;
-  const s = startDate?.toDate(); const e = endDate?.toDate();
-  if (s && e && (dt < s || dt > e)) {
-    return NextResponse.json({ error: "session-out-of-range" }, { status: 400 });
-  }
 
   try {
     const ref = await convRef.collection("sessions").add({
